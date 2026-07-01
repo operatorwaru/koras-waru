@@ -264,6 +264,36 @@
                   </div>
                 </div>
               </div>
+
+              <!-- KOTAK VALIDASI BARU -->
+              <div class="glass-card p-3 mb-3" id="panelValidasiBKU">
+                <div class="text-gold fw-bold small mb-2 text-uppercase tracking-wider">
+                  <i class="fas fa-check-double me-1"></i> Kontrol Validasi Jumlah
+                </div>
+                <div class="vstack gap-2">
+                  <div class="d-flex justify-content-between align-items-center border-bottom pb-1 border-white-50" style="border-bottom: 1px solid rgba(255,255,255,0.05) !important;">
+                    <span class="text-white-50 small">Total Penerimaan (PDF)</span>
+                    <span id="valPenerimaanPDF" class="fw-bold small text-white">0</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center border-bottom pb-1 border-white-50" style="border-bottom: 1px solid rgba(255,255,255,0.05) !important;">
+                    <span class="text-white-50 small">Total Penerimaan (Tabel)</span>
+                    <span id="valPenerimaanTabel" class="fw-bold small text-white">0</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center border-bottom pb-1 border-white-50" style="border-bottom: 1px solid rgba(255,255,255,0.05) !important;">
+                    <span class="text-white-50 small">Total Pengeluaran (PDF)</span>
+                    <span id="valPengeluaranPDF" class="fw-bold small text-white">0</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center border-bottom pb-1 border-white-50" style="border-bottom: 1px solid rgba(255,255,255,0.05) !important;">
+                    <span class="text-white-50 small">Total Pengeluaran (Tabel)</span>
+                    <span id="valPengeluaranTabel" class="fw-bold small text-white">0</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center mt-2">
+                    <span class="text-white-50 small">Status Kesesuaian</span>
+                    <span id="valStatus" class="badge bg-secondary">Menunggu</span>
+                  </div>
+                </div>
+              </div>
+              <!-- AKHIR KOTAK VALIDASI -->
               
               <div class="accordion" id="accordionRawTextBKU">
                 <div class="accordion-item border-0 shadow-sm rounded glass-card">
@@ -287,9 +317,20 @@
             <div class="dashboard-panel-right glass-card overflow-hidden">
               <div class="border-bottom d-flex justify-content-between align-items-center p-3 rounded-top" style="background-color: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.1) !important;">
                 <h5 class="mb-0 text-light fw-bold"><i class="fas fa-table me-2"></i>BKU Hasil Konversi</h5>
-                <button id="btnDownloadBKU" class="btn btn-gold rounded-pill btn-sm px-4 shadow-sm d-none" onclick="downloadExcelBKU()">
-                  <i class="fas fa-file-excel me-2"></i>Ekspor Excel
-                </button>
+                <div>
+                  <!-- Tombol Batal (Sembunyi di awal) -->
+                  <button id="btnBatalRapikanBKU" class="btn btn-secondary rounded-pill btn-sm px-4 shadow-sm d-none me-2" onclick="batalRapikanBKU()">
+                    <i class="fas fa-undo me-2"></i>Batal
+                  </button>
+                  <!-- Tombol Rapikan -->
+                  <button id="btnRapikanBKU" class="btn btn-primary rounded-pill btn-sm px-4 shadow-sm d-none me-2" onclick="rapikanBKU()">
+                    <i class="fas fa-magic me-2"></i>Rapikan
+                  </button>
+                  <!-- Tombol Ekspor -->
+                  <button id="btnDownloadBKU" class="btn btn-gold rounded-pill btn-sm px-4 shadow-sm d-none" onclick="downloadExcelBKU()">
+                    <i class="fas fa-file-excel me-2"></i>Ekspor Excel
+                  </button>
+                </div>
               </div>
               <div class="p-0 table-container-scroll" id="tableContainerBKU">
                 <div class="text-center text-muted py-5 my-5">
@@ -662,6 +703,12 @@
   // ==========================================
   // JAVASCRIPT: LOGIKA TAB BKU
   // ==========================================
+  // Fungsi umum untuk mengubah format rupiah ke angka murni
+  const ubahKeAngkaUmum = (teks) => {
+    if (!teks) return 0;
+    let angkaBersih = String(teks).replace(/\./g, '').trim();
+    return isNaN(angkaBersih) || angkaBersih === '' ? 0 : parseFloat(angkaBersih);
+  };
   const dropZoneBKU = document.getElementById('dropZoneBKU');
   const fileInputBKU = document.getElementById('fileInputBKU');
 
@@ -677,6 +724,9 @@
 
   function prosesFilePDF_BKU(file) {
     if (file.type !== 'application/pdf') { alert('Hanya menerima dokumen PDF.'); return; }
+
+    backupHTMLTabelBKU = ""; // Kosongkan data cadangan lama
+    document.getElementById('btnBatalRapikanBKU').classList.add('d-none');
 
     document.getElementById('rawTextBKU').textContent = "Membaca BKU: " + file.name + "...";
     document.getElementById('tableContainerBKU').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary mb-3"></div><p>Mengekstrak BKU...</p></div>';
@@ -760,8 +810,22 @@
                 return; 
               }
 
-              // Deteksi Batas Akhir Tabel (Footer)
+              // Deteksi Batas Akhir Tabel (Footer) dan Ambil Totalnya
               if (upperLine === "JUMLAH" || upperLine.startsWith("JUMLAH ") || upperLine.includes("PADA HARI INI") || upperLine.includes("TERDIRI DARI") || upperLine.includes("MENYETUJUI")) {
+                
+                // Khusus jika baris tersebut memuat kata "JUMLAH", kita ekstrak angkanya
+                if (upperLine.startsWith("JUMLAH")) {
+                  let kataKata = lineText.split(" ");
+                  // Cari semua teks yang mirip dengan format angka uang (misal: 10.000, 1.500.000)
+                  let nominalDitemukan = kataKata.filter(kata => /^\d{1,3}(\.\d{3})*(,\d{2})?$/.test(kata));
+                  
+                  // Biasanya ada 2 angka: [0] Penerimaan, [1] Pengeluaran
+                  if (nominalDitemukan.length >= 2) {
+                    window.totalTerimaPDF = ubahKeAngkaUmum(nominalDitemukan[0]);
+                    window.totalKeluarPDF = ubahKeAngkaUmum(nominalDitemukan[1]);
+                  }
+                }
+                
                 isFooterArea = true;
               }
 
@@ -916,6 +980,8 @@
 
           if (tableRows.length > 0) {
             buatTabelHTML_BKU(tableRows);
+            jalankanValidasiSistem(tableRows);
+            document.getElementById('btnRapikanBKU').classList.remove('d-none');
             document.getElementById('btnDownloadBKU').classList.remove('d-none');
           } else {
             document.getElementById('tableContainerBKU').innerHTML = '<div class="alert alert-warning m-4">Data BKU tidak ditemukan.</div>';
@@ -929,6 +995,38 @@
     };
     fileReader.readAsArrayBuffer(file);
   }
+
+  // Fungsi untuk memvalidasi angka PDF vs HTML Tabel
+  function jalankanValidasiSistem(dataBarisTabel) {
+    let totalTerimaTabel = 0;
+    let totalKeluarTabel = 0;
+
+    // 1. Jumlahkan dari data tabel
+    dataBarisTabel.forEach(baris => {
+      totalTerimaTabel += ubahKeAngkaUmum(baris[5]); // Index 5 = Penerimaan
+      totalKeluarTabel += ubahKeAngkaUmum(baris[6]); // Index 6 = Pengeluaran
+    });
+
+    // 2. Format kembali ke bentuk Rupiah
+    const formatUang = (angka) => angka === 0 ? "0" : angka.toLocaleString('id-ID');
+
+    // 3. Tulis ke dalam HTML Panel Kiri
+    document.getElementById('valPenerimaanPDF').textContent = formatUang(window.totalTerimaPDF || 0);
+    document.getElementById('valPengeluaranPDF').textContent = formatUang(window.totalKeluarPDF || 0);
+    document.getElementById('valPenerimaanTabel').textContent = formatUang(totalTerimaTabel);
+    document.getElementById('valPengeluaranTabel').textContent = formatUang(totalKeluarTabel);
+
+    // 4. Bandingkan dan beri warna status
+    let statusEl = document.getElementById('valStatus');
+    if ((window.totalTerimaPDF || 0) === totalTerimaTabel && (window.totalKeluarPDF || 0) === totalKeluarTabel) {
+      statusEl.textContent = "Data Sesuai";
+      statusEl.className = "badge bg-success shadow-sm";
+    } else {
+      statusEl.textContent = "Tidak Sesuai";
+      statusEl.className = "badge bg-danger shadow-sm";
+    }
+  }
+  // ===============
 
   function buatTabelHTML_BKU(rowsData) {
     let tableHTML = `
@@ -1047,6 +1145,113 @@
     const blob = new Blob([await workbook.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     saveAs(blob, `Export_BKU_${npsn}_${nama}.xlsx`);
   }
+
+  // ==========================================
+  // JAVASCRIPT: LOGIKA MELEBUR BARIS BKU
+  // ==========================================
+  // ==========================================
+  // JAVASCRIPT: LOGIKA MELEBUR BARIS BKU
+  // ==========================================
+  
+  // Variabel untuk menyimpan cadangan data tabel asli
+  let backupHTMLTabelBKU = "";
+
+  function rapikanBKU() {
+    const tbody = document.querySelector('#dataTabelHasilBKU tbody');
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    if (rows.length === 0) return;
+
+    // 1. Simpan cadangan tabel sebelum diubah (jika belum ada cadangannya)
+    if (backupHTMLTabelBKU === "") {
+      backupHTMLTabelBKU = tbody.innerHTML;
+    }
+
+    let dataYangSudahDilebur = [];
+    let kelompokSaatIni = null;
+
+    const ubahKeAngka = (teks) => {
+      if (!teks) return 0;
+      let angkaBersih = teks.replace(/\./g, '').trim();
+      return isNaN(angkaBersih) || angkaBersih === '' ? 0 : parseFloat(angkaBersih);
+    };
+
+    const ubahKeTeksUang = (angka) => {
+      return angka === 0 ? "0" : angka.toLocaleString('id-ID');
+    };
+
+    rows.forEach(tr => {
+      const kolom = tr.querySelectorAll('td');
+      if (kolom.length < 8) return;
+
+      let tgl = kolom[0].innerText.trim();
+      let keg = kolom[1].innerText.trim();
+      let rek = kolom[2].innerText.trim();
+      let bukti = kolom[3].innerText.trim();
+      let uraian = kolom[4].innerText.trim();
+      let terima = kolom[5].innerText.trim();
+      let keluar = kolom[6].innerText.trim();
+      let saldo = kolom[7].innerText.trim();
+
+      // 2. CEK SYARAT: Pastikan tidak ada kolom yang kosong sama sekali
+      let semuaAdaNilainya = (tgl !== "" && keg !== "" && rek !== "" && bukti !== "" && uraian !== "" && terima !== "" && keluar !== "" && saldo !== "");
+
+      let kunciIdentitas = `${tgl}|${keg}|${rek}|${bukti}`;
+
+      // 3. Gabungkan JIKA: baris saat ini lengkap, kelompok sebelumnya lengkap, dan kuncinya sama
+      if (semuaAdaNilainya && kelompokSaatIni && kelompokSaatIni.kunci === kunciIdentitas && kelompokSaatIni.semuaAdaNilainya) {
+        
+        if (uraian !== "") {
+          kelompokSaatIni.data[4] += `, ${uraian}`;
+        }
+        
+        let totalTerima = ubahKeAngka(kelompokSaatIni.data[5]) + ubahKeAngka(terima);
+        let totalKeluar = ubahKeAngka(kelompokSaatIni.data[6]) + ubahKeAngka(keluar);
+        kelompokSaatIni.data[5] = ubahKeTeksUang(totalTerima);
+        kelompokSaatIni.data[6] = ubahKeTeksUang(totalKeluar);
+        
+        kelompokSaatIni.data[7] = saldo;
+
+      } else {
+        // Jika tidak memenuhi syarat, simpan sebagai baris / kelompok baru
+        if (kelompokSaatIni) {
+          dataYangSudahDilebur.push(kelompokSaatIni.data);
+        }
+        
+        kelompokSaatIni = {
+          kunci: kunciIdentitas,
+          semuaAdaNilainya: semuaAdaNilainya, // Simpan status kelengkapannya
+          data: [tgl, keg, rek, bukti, uraian, terima, keluar, saldo]
+        };
+      }
+    });
+
+    if (kelompokSaatIni) {
+      dataYangSudahDilebur.push(kelompokSaatIni.data);
+    }
+
+    // 4. Tampilkan tabel yang sudah dirapikan
+    buatTabelHTML_BKU(dataYangSudahDilebur);
+
+    // 5. Sembunyikan tombol Rapikan, tampilkan tombol Batal
+    document.getElementById('btnRapikanBKU').classList.add('d-none');
+    document.getElementById('btnBatalRapikanBKU').classList.remove('d-none');
+  }
+
+  // Fungsi baru untuk mengembalikan data ke keadaan semula
+  function batalRapikanBKU() {
+    const tbody = document.querySelector('#dataTabelHasilBKU tbody');
+    if (tbody && backupHTMLTabelBKU !== "") {
+      // Kembalikan isi tabel menggunakan data cadangan
+      tbody.innerHTML = backupHTMLTabelBKU;
+      
+      // Sembunyikan tombol Batal, tampilkan kembali tombol Rapikan
+      document.getElementById('btnBatalRapikanBKU').classList.add('d-none');
+      document.getElementById('btnRapikanBKU').classList.remove('d-none');
+    }
+  }
+
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
