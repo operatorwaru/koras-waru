@@ -318,15 +318,15 @@
               <div class="border-bottom d-flex justify-content-between align-items-center p-3 rounded-top" style="background-color: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.1) !important;">
                 <h5 class="mb-0 text-light fw-bold"><i class="fas fa-table me-2"></i>BKU Hasil Konversi</h5>
                 <div>
-                  <!-- Tombol Batal (Sembunyi di awal) -->
+                  <button id="btnResetBKU" class="btn btn-danger rounded-pill btn-sm px-4 shadow-sm d-none me-2" onclick="resetTabelBKU()">
+                    <i class="fas fa-sync-alt me-2"></i>Reset
+                  </button>
                   <button id="btnBatalRapikanBKU" class="btn btn-secondary rounded-pill btn-sm px-4 shadow-sm d-none me-2" onclick="batalRapikanBKU()">
                     <i class="fas fa-undo me-2"></i>Batal
                   </button>
-                  <!-- Tombol Rapikan -->
                   <button id="btnRapikanBKU" class="btn btn-primary rounded-pill btn-sm px-4 shadow-sm d-none me-2" onclick="rapikanBKU()">
                     <i class="fas fa-magic me-2"></i>Rapikan
                   </button>
-                  <!-- Tombol Ekspor -->
                   <button id="btnDownloadBKU" class="btn btn-gold rounded-pill btn-sm px-4 shadow-sm d-none" onclick="downloadExcelBKU()">
                     <i class="fas fa-file-excel me-2"></i>Ekspor Excel
                   </button>
@@ -980,6 +980,8 @@
 
           if (tableRows.length > 0) {
             buatTabelHTML_BKU(tableRows);
+            htmlTabelBKUAsli = document.querySelector('#dataTabelHasilBKU tbody').innerHTML;
+            document.getElementById('btnResetBKU').classList.remove('d-none');
             hitungUlangValidasiDOM();
             document.getElementById('btnRapikanBKU').classList.remove('d-none');
             document.getElementById('btnDownloadBKU').classList.remove('d-none');
@@ -1045,9 +1047,9 @@
           <tr>
             <th style="width:90px">Tanggal</th><th>Kode Kegiatan</th><th>Kode Rekening</th><th>No. Bukti</th>
             <th>Uraian</th><th>Penerimaan</th><th>Pengeluaran</th><th>Saldo</th>
-          </tr>
+            <th style="width:70px">Aksi</th> </tr>
           <tr class="bg-primary-subtle">
-            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th>
+            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>-</th>
           </tr>
         </thead>
         <tbody>
@@ -1055,10 +1057,25 @@
     
     rowsData.forEach(row => {
       tableHTML += `<tr>`;
+      
+      // Masukkan data kolom 1 sampai 8
       row.forEach((cell, i) => {
         let align = (i >= 5) ? "text-end" : (i === 4 ? "text-start" : "text-center");
         tableHTML += `<td contenteditable="true" class="text-dark ${align}">${cell}</td>`;
       });
+
+      // TAMBAHAN TOMBOL NAIK & TURUN (Kolom ke-9)
+      tableHTML += `
+        <td class="text-center align-middle" contenteditable="false">
+          <button class="btn btn-sm btn-outline-secondary p-1 border-0" onclick="pindahBaris(this, 'naik')" title="Pindah ke Atas">
+            <i class="fas fa-arrow-up"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary p-1 border-0" onclick="pindahBaris(this, 'turun')" title="Pindah ke Bawah">
+            <i class="fas fa-arrow-down"></i>
+          </button>
+        </td>
+      `;
+
       tableHTML += `</tr>`;
     });
     
@@ -1130,6 +1147,7 @@
       const excelRow = worksheet.getRow(currentRow);
 
       tds.forEach((td, index) => {
+        if (index === 8) return;
         let cellValue = td.innerText.trim();
         let cell = excelRow.getCell(index + 1);
 
@@ -1292,9 +1310,96 @@
     // Pastikan yang diketik adalah sel (TD) yang berada di dalam tabel BKU kita
     if (e.target.tagName === 'TD' && e.target.closest('#dataTabelHasilBKU')) {
       // Jalankan fungsi hitung ulang secara otomatis
+      hitungUlangSaldoDOM();
       hitungUlangValidasiDOM();
     }
   });
+
+
+  // Fungsi untuk memindahkan posisi baris tabel (Naik/Turun)
+  function pindahBaris(tombol, arah) {
+    // Cari elemen baris (<tr>) tempat tombol ini berada
+    const baris = tombol.closest('tr'); 
+    const tbody = baris.parentNode;
+
+    if (arah === 'naik') {
+      const barisSebelumnya = baris.previousElementSibling;
+      if (barisSebelumnya) {
+        // Pindahkan baris ini ke atas baris sebelumnya
+        tbody.insertBefore(baris, barisSebelumnya);
+      }
+    } else if (arah === 'turun') {
+      const barisSelanjutnya = baris.nextElementSibling;
+      if (barisSelanjutnya) {
+        // Pindahkan baris ini ke bawah baris selanjutnya
+        tbody.insertBefore(baris, barisSelanjutnya.nextElementSibling);
+      }
+    }
+
+    hitungUlangSaldoDOM();    
+    hitungUlangValidasiDOM();
+  }
+
+  // ==========================================
+  // JAVASCRIPT: HITUNG ULANG SALDO OTOMATIS
+  // ==========================================
+  function hitungUlangSaldoDOM() {
+    const tbody = document.querySelector('#dataTabelHasilBKU tbody');
+    if (!tbody) return;
+
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length === 0) return;
+
+    let saldoBerjalan = 0;
+
+    // Sisir baris dari atas ke bawah
+    rows.forEach((tr, index) => {
+      const kolom = tr.querySelectorAll('td');
+      if (kolom.length >= 8) {
+        let terima = ubahKeAngkaUmum(kolom[5].innerText);
+        let keluar = ubahKeAngkaUmum(kolom[6].innerText);
+
+        if (index === 0) {
+          // Baris pertama: Jika kolom terima & keluar kosong (0), tandanya ini baris Saldo Awal Bulan
+          if (terima === 0 && keluar === 0) {
+            saldoBerjalan = ubahKeAngkaUmum(kolom[7].innerText);
+          } else {
+            // Jika transaksi biasa, saldo awalnya adalah Terima dikurangi Keluar
+            saldoBerjalan = terima - keluar;
+          }
+        } else {
+          // Baris ke-2 dan seterusnya: Saldo sebelumnya + Terima - Keluar
+          saldoBerjalan = saldoBerjalan + terima - keluar;
+        }
+
+        // Tulis nilai saldo baru yang sudah rapi ke Kolom Saldo (Index 7)
+        kolom[7].innerText = saldoBerjalan === 0 ? "0" : saldoBerjalan.toLocaleString('id-ID');
+      }
+    });
+  }
+
+  // ==========================================
+  // JAVASCRIPT: LOGIKA RESET TABEL KE AWAL
+  // ==========================================
+  
+  // Variabel untuk menyimpan kondisi tabel BKU murni dari PDF
+  let htmlTabelBKUAsli = ""; 
+
+  function resetTabelBKU() {
+    const tbody = document.querySelector('#dataTabelHasilBKU tbody');
+    if (tbody && htmlTabelBKUAsli !== "") {
+      // 1. Kembalikan isi tabel ke kondisi paling awal
+      tbody.innerHTML = htmlTabelBKUAsli;
+      
+      // 2. Hitung ulang semuanya agar panel sinkron
+      hitungUlangSaldoDOM();
+      hitungUlangValidasiDOM();
+      
+      // 3. Atur ulang tampilan tombol
+      document.getElementById('btnBatalRapikanBKU').classList.add('d-none');
+      document.getElementById('btnRapikanBKU').classList.remove('d-none');
+    }
+  }
 
 </script>
 
