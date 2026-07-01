@@ -122,8 +122,8 @@
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 border-bottom pb-3" style="border-bottom: 1px solid rgba(255,255,255,0.1) !important;">
       
       <div class="mb-3 mb-md-0">
-        <h3 class="fw-bold mb-0 text-white"><i class="fas fa-box-tissue me-2 text-gold"></i>KORAS WARU</h3>
-        <small class="text-gold mt-2">Konversi Arkas Sipbos Kec Waru</small>
+        <h3 class="fw-bold mb-0 text-white"><i class="fas fa-box-tissue me-2 text-gold"></i>KORAS</h3>
+        <small class="text-gold mt-2">Sistem Ekstraksi Dokumen RKAS & BKU</small>
       </div>
       
       <ul class="nav nav-pills" id="pills-tab" role="tablist">
@@ -135,6 +135,11 @@
         <li class="nav-item" role="presentation">
           <button class="nav-link px-3 py-1.5 small ms-2" id="pills-bku-tab" data-bs-toggle="pill" data-bs-target="#pills-bku" type="button" role="tab">
             <i class="fas fa-book me-1"></i>BKU
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-3 py-1.5 small ms-2" id="pills-tutorial-tab" data-bs-toggle="pill" data-bs-target="#pills-tutorial" type="button" role="tab">
+            <i class="fas fa-video me-1"></i>Tutorial
           </button>
         </li>
       </ul>
@@ -225,7 +230,7 @@
             <div class="dashboard-panel-left">
               
               <div class="glass-card drop-zone p-4 text-center mb-3" id="dropZoneBKU">
-                <i class="fas fa-cloud-upload-alt fa-3x mb-2 text-gold"></i>
+                <i class="fas fa-file-invoice-dollar fa-3x mb-2 text-gold"></i>
                 <h5 class="text-white fw-bold mb-1">Tarik & Lepas File BKU</h5>
                 <p class="text-white-50 small mb-3">Format PDF Buku Kas Umum</p>
                 <button class="btn btn-gold btn-sm rounded-pill px-4 shadow-sm" onclick="document.getElementById('fileInputBKU').click()">Pilih Dokumen BKU</button>
@@ -297,6 +302,75 @@
 
         </div>
       </div>
+
+      <!-- ================================= TAB BKU ================================= -->
+      <div class="tab-pane fade" id="pills-tutorial" role="tabpanel">
+        
+        <div class="d-flex align-items-center mb-4">
+          <i class="fas fa-play-circle fa-2x text-gold me-3"></i>
+          <div>
+            <h5 class="mb-0 text-white fw-bold">Video Panduan</h5>
+            <small class="text-white-50">Kumpulan Video tentang Bantuan Operasional Satuan Pendidikan</small>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          
+          <div class="col-12 col-md-6 col-xl-4">
+            <div class="glass-card p-3 h-100 d-flex flex-column">
+              <div class="ratio ratio-16x9 mb-3 rounded overflow-hidden shadow-sm" style="border: 1px solid rgba(255,255,255,0.1);">
+                <iframe 
+                  src="https://www.youtube.com/embed/BbIAC8GGkYg" 
+                  title="Tutorial KORAS Bagian 1" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  referrerpolicy="strict-origin-when-cross-origin" 
+                  allowfullscreen>
+                </iframe>
+              </div>
+              <h6 class="text-gold fw-bold mb-2">1. Tutorial KORAS Bagian 1</h6>
+              <p class="text-white-50 small mb-0 mt-auto">Penjelasan langkah awal menggunakan aplikasi dan persiapan dokumen.</p>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6 col-xl-4">
+            <div class="glass-card p-3 h-100 d-flex flex-column">
+              <div class="ratio ratio-16x9 mb-3 rounded overflow-hidden shadow-sm" style="border: 1px solid rgba(255,255,255,0.1);">
+                <iframe 
+                  src="https://www.youtube.com/embed/sHlh_xfGjB0" 
+                  title="Tutorial KORAS Bagian 2" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  referrerpolicy="strict-origin-when-cross-origin" 
+                  allowfullscreen>
+                </iframe>
+              </div>
+              <h6 class="text-gold fw-bold mb-2">2. Tutorial KORAS Bagian 2</h6>
+              <p class="text-white-50 small mb-0 mt-auto">Cara mengonversi file PDF RKAS dan BKU menjadi format Excel dengan rapi.</p>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6 col-xl-4">
+            <div class="glass-card p-3 h-100 d-flex flex-column">
+              <div class="ratio ratio-16x9 mb-3 rounded overflow-hidden shadow-sm" style="border: 1px solid rgba(255,255,255,0.1);">
+                <iframe 
+                  src="https://www.youtube.com/embed/pcxPZH_rdJw" 
+                  title="Cara Konversi Laporan Realisasi Anggaran V3 ke Form 1C" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  referrerpolicy="strict-origin-when-cross-origin" 
+                  allowfullscreen>
+                </iframe>
+              </div>
+              <h6 class="text-gold fw-bold mb-2">3. Konversi LRA V3 ke Form 1C</h6>
+              <p class="text-white-50 small mb-0 mt-auto">Tutorial menyusun laporan Form 1C menggunakan data dari LRA versi 3 Sipbos.</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+      <!-- ================================= AKHIR ================================= -->
 
     </div>
   </div>
