@@ -980,7 +980,7 @@
 
           if (tableRows.length > 0) {
             buatTabelHTML_BKU(tableRows);
-            jalankanValidasiSistem(tableRows);
+            hitungUlangValidasiDOM();
             document.getElementById('btnRapikanBKU').classList.remove('d-none');
             document.getElementById('btnDownloadBKU').classList.remove('d-none');
           } else {
@@ -996,27 +996,37 @@
     fileReader.readAsArrayBuffer(file);
   }
 
-  // Fungsi untuk memvalidasi angka PDF vs HTML Tabel
-  function jalankanValidasiSistem(dataBarisTabel) {
+  // Fungsi untuk memvalidasi angka PDF vs HTML Tabel (Langsung dari Layar)
+  function hitungUlangValidasiDOM() {
+    const tbody = document.querySelector('#dataTabelHasilBKU tbody');
+    if (!tbody) return;
+
     let totalTerimaTabel = 0;
     let totalKeluarTabel = 0;
 
-    // 1. Jumlahkan dari data tabel
-    dataBarisTabel.forEach(baris => {
-      totalTerimaTabel += ubahKeAngkaUmum(baris[5]); // Index 5 = Penerimaan
-      totalKeluarTabel += ubahKeAngkaUmum(baris[6]); // Index 6 = Pengeluaran
+    // 1. Ambil semua baris di layar saat ini
+    const barisTabel = tbody.querySelectorAll('tr');
+    
+    // 2. Jumlahkan ulang nilainya
+    barisTabel.forEach(tr => {
+      const kolom = tr.querySelectorAll('td');
+      if (kolom.length >= 8) {
+        // Ambil angka dari kolom Penerimaan (index 5) dan Pengeluaran (index 6)
+        totalTerimaTabel += ubahKeAngkaUmum(kolom[5].innerText);
+        totalKeluarTabel += ubahKeAngkaUmum(kolom[6].innerText);
+      }
     });
 
-    // 2. Format kembali ke bentuk Rupiah
+    // 3. Format kembali ke bentuk Rupiah
     const formatUang = (angka) => angka === 0 ? "0" : angka.toLocaleString('id-ID');
 
-    // 3. Tulis ke dalam HTML Panel Kiri
+    // 4. Tulis ke dalam HTML Panel Kiri
     document.getElementById('valPenerimaanPDF').textContent = formatUang(window.totalTerimaPDF || 0);
     document.getElementById('valPengeluaranPDF').textContent = formatUang(window.totalKeluarPDF || 0);
     document.getElementById('valPenerimaanTabel').textContent = formatUang(totalTerimaTabel);
     document.getElementById('valPengeluaranTabel').textContent = formatUang(totalKeluarTabel);
 
-    // 4. Bandingkan dan beri warna status
+    // 5. Bandingkan dan beri warna status
     let statusEl = document.getElementById('valStatus');
     if ((window.totalTerimaPDF || 0) === totalTerimaTabel && (window.totalKeluarPDF || 0) === totalKeluarTabel) {
       statusEl.textContent = "Data Sesuai";
@@ -1255,6 +1265,7 @@
 
     // 4. Tampilkan tabel yang sudah dirapikan
     buatTabelHTML_BKU(dataYangSudahDilebur);
+    hitungUlangValidasiDOM();
 
     // 5. Sembunyikan tombol Rapikan, tampilkan tombol Batal
     document.getElementById('btnRapikanBKU').classList.add('d-none');
@@ -1271,8 +1282,19 @@
       // Sembunyikan tombol Batal, tampilkan kembali tombol Rapikan
       document.getElementById('btnBatalRapikanBKU').classList.add('d-none');
       document.getElementById('btnRapikanBKU').classList.remove('d-none');
+      hitungUlangValidasiDOM();
     }
   }
+
+
+  // Memasang "Telinga" untuk mendeteksi perubahan ketikan di tabel BKU secara real-time
+  document.getElementById('tableContainerBKU').addEventListener('input', function(e) {
+    // Pastikan yang diketik adalah sel (TD) yang berada di dalam tabel BKU kita
+    if (e.target.tagName === 'TD' && e.target.closest('#dataTabelHasilBKU')) {
+      // Jalankan fungsi hitung ulang secara otomatis
+      hitungUlangValidasiDOM();
+    }
+  });
 
 </script>
 
