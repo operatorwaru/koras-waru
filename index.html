@@ -318,6 +318,9 @@
               <div class="border-bottom d-flex justify-content-between align-items-center p-3 rounded-top" style="background-color: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.1) !important;">
                 <h5 class="mb-0 text-light fw-bold"><i class="fas fa-table me-2"></i>BKU Hasil Konversi</h5>
                 <div>
+                  <button id="btnTambahBarisBKU" class="btn btn-success rounded-pill btn-sm px-4 shadow-sm d-none me-2" onclick="tambahBarisBKU()">
+                    <i class="fas fa-plus me-2"></i>Baris
+                  </button>
                   <button id="btnResetBKU" class="btn btn-danger rounded-pill btn-sm px-4 shadow-sm d-none me-2" onclick="resetTabelBKU()">
                     <i class="fas fa-sync-alt me-2"></i>Reset
                   </button>
@@ -985,6 +988,7 @@
             hitungUlangValidasiDOM();
             document.getElementById('btnRapikanBKU').classList.remove('d-none');
             document.getElementById('btnDownloadBKU').classList.remove('d-none');
+            document.getElementById('btnTambahBarisBKU').classList.remove('d-none');
           } else {
             document.getElementById('tableContainerBKU').innerHTML = '<div class="alert alert-warning m-4">Data BKU tidak ditemukan.</div>';
           }
@@ -1047,7 +1051,7 @@
           <tr>
             <th style="width:90px">Tanggal</th><th>Kode Kegiatan</th><th>Kode Rekening</th><th>No. Bukti</th>
             <th>Uraian</th><th>Penerimaan</th><th>Pengeluaran</th><th>Saldo</th>
-            <th style="width:70px">Aksi</th> </tr>
+            <th style="width:80px">Aksi</th> </tr>
           <tr class="bg-primary-subtle">
             <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>-</th>
           </tr>
@@ -1072,6 +1076,9 @@
           </button>
           <button class="btn btn-sm btn-outline-secondary p-1 border-0" onclick="pindahBaris(this, 'turun')" title="Pindah ke Bawah">
             <i class="fas fa-arrow-down"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger p-1 border-0" onclick="hapusBaris(this)" title="Hapus Baris">
+            <i class="fas fa-trash"></i>
           </button>
         </td>
       `;
@@ -1388,17 +1395,86 @@
   function resetTabelBKU() {
     const tbody = document.querySelector('#dataTabelHasilBKU tbody');
     if (tbody && htmlTabelBKUAsli !== "") {
-      // 1. Kembalikan isi tabel ke kondisi paling awal
-      tbody.innerHTML = htmlTabelBKUAsli;
       
-      // 2. Hitung ulang semuanya agar panel sinkron
+      // --- TAMBAHKAN KOTAK PERINGATAN DI SINI ---
+      const apakahYakin = confirm("Apakah Anda yakin ingin mereset tabel ke kondisi awal? Semua perubahan, editan, dan pergeseran baris Anda akan hilang.");
+      
+      // Jika pengguna menekan "OK" (True), maka proses reset dijalankan
+      if (apakahYakin) {
+        // 1. Kembalikan isi tabel ke kondisi paling awal
+        tbody.innerHTML = htmlTabelBKUAsli;
+        
+        // 2. Hitung ulang semuanya agar panel sinkron
+        hitungUlangSaldoDOM();
+        hitungUlangValidasiDOM();
+        
+        // 3. Atur ulang tampilan tombol
+        document.getElementById('btnBatalRapikanBKU').classList.add('d-none');
+        document.getElementById('btnRapikanBKU').classList.remove('d-none');
+      }
+      // Jika menekan "Batal" / "Cancel", sistem tidak akan melakukan apa-apa (tabel tetap aman).
+    }
+  }
+
+  // ==========================================
+  // JAVASCRIPT: LOGIKA TAMBAH & HAPUS BARIS
+  // ==========================================
+
+  // Fungsi untuk menghapus baris tertentu
+  function hapusBaris(tombol) {
+    if (confirm("Apakah Anda yakin ingin menghapus baris ini?")) {
+      const baris = tombol.closest('tr');
+      baris.remove(); // Hapus baris dari layar
+      
+      // Hitung ulang semuanya agar sinkron
       hitungUlangSaldoDOM();
       hitungUlangValidasiDOM();
-      
-      // 3. Atur ulang tampilan tombol
-      document.getElementById('btnBatalRapikanBKU').classList.add('d-none');
-      document.getElementById('btnRapikanBKU').classList.remove('d-none');
     }
+  }
+
+  // Fungsi untuk menambahkan baris kosong baru di bagian bawah
+  function tambahBarisBKU() {
+    const tbody = document.querySelector('#dataTabelHasilBKU tbody');
+    if (!tbody) {
+      alert("Silakan unggah dan proses PDF terlebih dahulu!");
+      return;
+    }
+
+    // Buat elemen baris (TR) baru
+    const trBaru = document.createElement('tr');
+    
+    // Isi baris baru dengan kolom-kolom (TD) kosong dan tombol aksi
+    trBaru.innerHTML = `
+      <td contenteditable="true" class="text-dark text-center"></td>
+      <td contenteditable="true" class="text-dark text-center"></td>
+      <td contenteditable="true" class="text-dark text-center"></td>
+      <td contenteditable="true" class="text-dark text-center"></td>
+      <td contenteditable="true" class="text-dark text-start">Baris Manual Baru</td>
+      <td contenteditable="true" class="text-dark text-end">0</td>
+      <td contenteditable="true" class="text-dark text-end">0</td>
+      <td contenteditable="true" class="text-dark text-end">0</td>
+      <td class="text-center align-middle" contenteditable="false">
+        <button class="btn btn-sm btn-outline-secondary p-1 border-0" onclick="pindahBaris(this, 'naik')" title="Pindah ke Atas">
+          <i class="fas fa-arrow-up"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary p-1 border-0" onclick="pindahBaris(this, 'turun')" title="Pindah ke Bawah">
+          <i class="fas fa-arrow-down"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger p-1 border-0" onclick="hapusBaris(this)" title="Hapus Baris">
+          <i class="fas fa-trash"></i>
+        </button>
+      </td>
+    `;
+
+    // Masukkan baris baru ini ke paling bawah tabel
+    tbody.appendChild(trBaru);
+    
+    // Hitung ulang saldo agar angka "0" dari baris baru ikut terkalkulasi
+    hitungUlangSaldoDOM();
+    hitungUlangValidasiDOM();
+    
+    // Arahkan layar sedikit ke bawah agar pengguna melihat baris barunya
+    document.getElementById('tableContainerBKU').scrollTop = document.getElementById('tableContainerBKU').scrollHeight;
   }
 
 </script>
