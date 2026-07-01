@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KORAS WARU - Konversi Arkas ke Sipbos Kecamatan Waru</title>
+  <base target="_top">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  
+  <style>
+    /* ==========================================
+       TEMA WARNA & LATAR BELAKANG
+       ========================================== */
+    :root {
+      --primary-blue: #0b3d6e; 
+      --secondary-blue: #1a5b99; 
+      --accent-gold: #e5b85c; 
+      --text-light: #f8f9fa;
+    }
+
+    body { 
+      background: radial-gradient(circle at top, var(--secondary-blue) 0%, var(--primary-blue) 100%);
+      background-attachment: fixed;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      color: var(--text-light);
+      position: relative;
+      z-index: 0;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100vw;
+      height: 100vh;
+      background-image: url('https://sscasn.bkn.go.id/assets/indo_2.svg'); 
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: cover; 
+      opacity: 0.2; 
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.07); 
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); 
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .drop-zone {
+      border: 2px dashed rgba(229, 184, 92, 0.4);
+      cursor: pointer;
+      transition: all 0.25s ease-in-out;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent-gold);
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 15px rgba(229, 184, 92, 0.2);
+    }
+
+    .nav-pills .nav-link {
+      color: rgba(255, 255, 255, 0.7);
+      border-radius: 8px;
+      transition: all 0.25s ease;
+      background: rgba(255, 255, 255, 0.04);
+      font-weight: 500;
+    }
+    
+    .nav-pills .nav-link:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+    .nav-pills .nav-link.active {
+      background: var(--accent-gold); 
+      color: var(--primary-blue); 
+      box-shadow: 0 4px 12px rgba(229, 184, 92, 0.3);
+      font-weight: bold;
+    }
+
+    .text-gold { color: var(--accent-gold) !important; }
+    .btn-gold { background-color: var(--accent-gold); color: var(--primary-blue); font-weight: bold; border: none; }
+    .btn-gold:hover { background-color: #d4af37; color: var(--primary-blue); }
+
+    .dashboard-panel-left { max-height: calc(100vh - 185px); overflow-y: auto; padding-right: 5px; }
+    .dashboard-panel-right { height: calc(100vh - 185px); display: flex; flex-direction: column; }
+    .raw-text-box { max-height: 140px; overflow-y: auto; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.1); color: #212529; border-radius: 6px; }
+
+    .table-container-scroll { flex-grow: 1; overflow-y: auto; overflow-x: auto; border-radius: 0 0 12px 12px; background: #fff;}
+    .table-container-scroll thead { position: sticky; top: 0; z-index: 3; }
+    .table-container-scroll table { border-collapse: separate; border-spacing: 0; width: 100%; margin-bottom: 0;}
+    .table-container-scroll thead th { border-bottom: 2px solid #dee2e6; background-color: #f8f9fa; color: #212529; font-size: 0.85rem;}
+    .table-container-scroll tbody td { font-size: 0.85rem; border-top: 1px solid rgba(229, 184, 92, 0.25) !important; border-bottom: 1px solid rgba(229, 184, 92, 0.25) !important;}
+
+    td[contenteditable="true"]:hover { background-color: rgba(229, 184, 92, 0.15) !important; cursor: text; outline: 1px dashed var(--accent-gold); }
+    td[contenteditable="true"]:focus { background-color: #fff !important; color: #000 !important; outline: 2px solid var(--accent-gold); }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+  </style>
+</head>
+<body>
+
+  <div class="container-fluid px-4 py-3">
+    
+    <!-- HEADER & NAVIGASI TAB -->
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2 border-white-initial" style="border-bottom: 1px solid rgba(255,255,255,0.1) !important;">
+      <div>
+        <h3 class="fw-bold mb-0 text-white me-3"><i class="fas fa-box-tissue me-2 text-gold"></i>KORAS WARU</h3>
+        <small class="text-gold mt-2">Konversi Arkas ke Sipbos Kec Waru</small>
+      </div>
+      
+      <ul class="nav nav-pills" id="pills-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active px-3 py-1.5 small" id="pills-belanja-tab" data-bs-toggle="pill" data-bs-target="#pills-belanja" type="button" role="tab">
+            <i class="fas fa-shopping-cart me-1"></i>RKAS
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-3 py-1.5 small ms-2" id="pills-bku-tab" data-bs-toggle="pill" data-bs-target="#pills-bku" type="button" role="tab">
+            <i class="fas fa-book me-1"></i>BKU
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- ISI TAB -->
+    <div class="tab-content" id="pills-tabContent">
+      
+      <!-- ================================= TAB RKAS ================================= -->
+      <div class="tab-pane fade show active" id="pills-belanja" role="tabpanel">
+        <div class="row g-4">
+          
+          <div class="col-xl-4 col-lg-5">
+            <div class="dashboard-panel-left">
+              
+              <div class="glass-card drop-zone p-4 text-center mb-3" id="dropZone">
+                <i class="fas fa-cloud-upload-alt fa-3x mb-2 text-gold"></i>
+                <h5 class="text-white fw-bold mb-1">Tarik & Lepas File RKAS</h5>
+                <p class="text-white-50 small mb-3">Format PDF RKAS Versi Tahap</p>
+                <button class="btn btn-gold btn-sm rounded-pill px-4 shadow-sm" onclick="document.getElementById('fileInput').click()">Pilih Dokumen RKAS</button>
+                <input type="file" id="fileInput" accept="application/pdf" hidden>
+              </div>
+
+              <div class="glass-card p-3 mb-3">
+                <div class="text-gold fw-bold small mb-2 text-uppercase tracking-wider">
+                  <i class="fas fa-info-circle me-1"></i> Identitas Dokumen Terbaca
+                </div>
+                <div class="vstack gap-2">
+                  <div class="d-flex justify-content-between align-items-center border-bottom pb-1 border-white-50" style="border-bottom: 1px solid rgba(255,255,255,0.05) !important;">
+                    <span class="text-white-50 small">NPSN</span>
+                    <span id="infoNpsn" class="fw-bold small text-white">-</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center border-bottom pb-1 border-white-50" style="border-bottom: 1px solid rgba(255,255,255,0.05) !important;">
+                    <span class="text-white-50 small">Nama Sekolah</span>
+                    <span id="infoNama" class="fw-bold small text-white text-end ms-2">-</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-white-50 small">Kecamatan</span>
+                    <span id="infoKecamatan" class="fw-bold small text-white">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion" id="accordionRawText">
+                <div class="accordion-item border-0 shadow-sm rounded glass-card">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed rounded text-gold fw-bold small mb-2 text-uppercase tracking-wider py-2.5" style="background: rgba(255,255,255,0.03); font-size: small;" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRawText">
+                      <i class="fas fa-gear me-2 text-gold"></i> Log Ekstraksi RKAS
+                    </button>
+                  </h2>
+                  <div id="collapseRawText" class="accordion-collapse collapse" data-bs-parent="#accordionRawText">
+                    <div class="accordion-body p-2">
+                      <pre id="rawText" class="bg-dark text-light p-2 m-0 raw-text-box">Menunggu berkas PDF RKAS masuk...</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="col-xl-8 col-lg-7">
+            <div class="dashboard-panel-right glass-card overflow-hidden">
+              <div class="border-bottom d-flex justify-content-between align-items-center p-3 rounded-top" style="background-color: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.1) !important;">
+                <h5 class="mb-0 text-light fw-bold"><i class="fas fa-table me-2"></i>RKAS Hasil Konversi</h5>
+                <button id="btnDownload" class="btn btn-gold rounded-pill btn-sm px-4 shadow-sm d-none" onclick="downloadExcel()">
+                  <i class="fas fa-file-excel me-2"></i>Ekspor Excel
+                </button>
+              </div>
+              <div class="p-0 table-container-scroll" id="tableContainer">
+                <div class="text-center text-muted py-5 my-5">
+                  <i class="fas fa-folder-open fa-4x mb-3 text-secondary opacity-25"></i><br>
+                  <h5>Belum Ada Data RKAS</h5>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================================= TAB BKU ================================= -->
+      <div class="tab-pane fade" id="pills-bku" role="tabpanel">
+        <div class="row g-4">
+          
+          <div class="col-xl-4 col-lg-5">
+            <div class="dashboard-panel-left">
+              
+              <div class="glass-card drop-zone p-4 text-center mb-3" id="dropZoneBKU">
+                <i class="fas fa-file-invoice-dollar fa-3x mb-2 text-gold"></i>
+                <h5 class="text-white fw-bold mb-1">Tarik & Lepas File BKU</h5>
+                <p class="text-white-50 small mb-3">Format PDF Buku Kas Umum</p>
+                <button class="btn btn-gold btn-sm rounded-pill px-4 shadow-sm" onclick="document.getElementById('fileInputBKU').click()">Pilih Dokumen BKU</button>
+                <input type="file" id="fileInputBKU" accept="application/pdf" hidden>
+              </div>
+
+              <div class="glass-card p-3 mb-3">
+                <div class="text-gold fw-bold small mb-2 text-uppercase tracking-wider">
+                  <i class="fas fa-info-circle me-1"></i> Identitas BKU
+                </div>
+                <div class="vstack gap-2">
+                  <div class="d-flex justify-content-between align-items-center border-bottom pb-1 border-white-50" style="border-bottom: 1px solid rgba(255,255,255,0.05) !important;">
+                    <span class="text-white-50 small">NPSN</span>
+                    <span id="infoNpsnBKU" class="fw-bold small text-white">-</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center border-bottom pb-1 border-white-50" style="border-bottom: 1px solid rgba(255,255,255,0.05) !important;">
+                    <span class="text-white-50 small">Nama Sekolah</span>
+                    <span id="infoNamaBKU" class="fw-bold small text-white text-end ms-2">-</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center border-bottom pb-1 border-white-50" style="border-bottom: 1px solid rgba(255,255,255,0.05) !important;">
+                    <span class="text-white-50 small">Bulan</span>
+                    <span id="infoPeriodeBKU" class="fw-bold small text-white">-</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center border-bottom pb-1 border-white-50" style="border-bottom: 1px solid rgba(255,255,255,0.05) !important;">
+                    <span class="text-white-50 small">Desa/Kecamatan</span>
+                    <span id="infoDesaKecamatanBKU" class="fw-bold small text-white text-end ms-2">-</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-white-50 small">Sumber Dana</span>
+                    <span id="infoSumberDanaBKU" class="fw-bold small text-white text-end ms-2">-</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="accordion" id="accordionRawTextBKU">
+                <div class="accordion-item border-0 shadow-sm rounded glass-card">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed rounded text-gold fw-bold small mb-2 text-uppercase tracking-wider py-2.5" style="background: rgba(255,255,255,0.03); font-size: small;" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRawTextBKU">
+                      <i class="fas fa-gear me-2 text-gold"></i> Log Ekstraksi BKU
+                    </button>
+                  </h2>
+                  <div id="collapseRawTextBKU" class="accordion-collapse collapse" data-bs-parent="#accordionRawTextBKU">
+                    <div class="accordion-body p-2">
+                      <pre id="rawTextBKU" class="bg-dark text-light p-2 m-0 raw-text-box">Menunggu berkas PDF BKU...</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="col-xl-8 col-lg-7">
+            <div class="dashboard-panel-right glass-card overflow-hidden">
+              <div class="border-bottom d-flex justify-content-between align-items-center p-3 rounded-top" style="background-color: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.1) !important;">
+                <h5 class="mb-0 text-light fw-bold"><i class="fas fa-table me-2"></i>BKU Hasil Konversi</h5>
+                <button id="btnDownloadBKU" class="btn btn-gold rounded-pill btn-sm px-4 shadow-sm d-none" onclick="downloadExcelBKU()">
+                  <i class="fas fa-file-excel me-2"></i>Ekspor Excel
+                </button>
+              </div>
+              <div class="p-0 table-container-scroll" id="tableContainerBKU">
+                <div class="text-center text-muted py-5 my-5">
+                  <i class="fas fa-folder-open fa-4x mb-3 text-secondary opacity-25"></i><br>
+                  <h5>Belum Ada Data BKU</h5>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="text-center p-3 mt-1" style="border-top: 1px solid rgba(255,255,255,0.1);">
+    <p class="mb-0 text-white-50 small ">
+      Data Anda tidak kami simpan. Keamanan dan privasi Anda terjamin sepenuhnya saat menggunakan layanan kami | <span class="text-gold fw-bold">AKHMAD FAUZAN</span> &copy; 2026
+    </p>
+  </footer>
+
+<script>
+  // Setup PDF.js Worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+  // ==========================================
+  // JAVASCRIPT: LOGIKA TAB RKAS
+  // ==========================================
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault(); dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) prosesFilePDF(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', function(e) {
+    if (e.target.files.length) prosesFilePDF(e.target.files[0]);
+  });
+
+  function prosesFilePDF(file) {
+    if (file.type !== 'application/pdf') { alert('Sistem hanya menerima berkas PDF.'); return; }
+
+    document.getElementById('rawText').textContent = "Membaca data: " + file.name;
+    document.getElementById('tableContainer').innerHTML = `<div class="text-center py-5"><div class="spinner-border text-primary mb-3"></div><p>Mengekstrak RKAS...</p></div>`;
+    document.getElementById('btnDownload').classList.add('d-none'); 
+
+    const fileReader = new FileReader();
+    fileReader.onload = function() {
+      const typedarray = new Uint8Array(this.result);
+      pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+        let pagePromises = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          pagePromises.push(pdf.getPage(i).then(page => page.getTextContent().then(textContent => {
+            let lines = {};
+            textContent.items.forEach(item => {
+              if (item.str.trim() === "") return;
+              let y = Math.round(item.transform[5]); 
+              let existingY = Object.keys(lines).find(key => Math.abs(key - y) <= 5);
+              if (existingY) lines[existingY].push(item);
+              else lines[y] = [item];
+            });
+            return lines;
+          })));
+        }
+
+        Promise.all(pagePromises).then(allPagesLines => {
+          let fullTextLines = [];
+          let tableRows = [];
+          let startExtract = false; 
+          let lastRow = null;       
+          let npsn = "", namaSekolah = "", kecamatan = "";
+
+          allPagesLines.forEach(lines => {
+            let sortedY = Object.keys(lines).sort((a, b) => b - a);
+            sortedY.forEach(y => {
+              let itemsInLine = lines[y].sort((a, b) => a.transform[4] - b.transform[4]);
+              let lineItems = itemsInLine.filter(item => item.str.trim() !== "");
+              if (lineItems.length === 0) return;
+
+              let tokens = lineItems.map(item => item.str.trim());
+              let lineText = tokens.join(" ");
+              fullTextLines.push(lineText);
+              let upperLine = lineText.toUpperCase().trim();
+
+              if (!startExtract) {
+                if (upperLine.includes("NPSN")) npsn = lineText.split(":")[1]?.trim() || "";
+                if (upperLine.includes("NAMA SEKOLAH")) namaSekolah = lineText.split(":")[1]?.trim() || "";
+                if (upperLine.includes("KEC.")) kecamatan = upperLine.split("KEC.")[1]?.split(",")[0].trim() || "";
+              }
+
+              if (upperLine.includes("B. BELANJA")) { startExtract = true; return; }
+
+              if (startExtract) {
+                if (upperLine.includes("KEPALA SEKOLAH") || upperLine.includes("NIP:") || upperLine.includes("BENDAHARA") || upperLine.includes("MENGETAHUI")) {
+                  lastRow = null; return;         
+                }
+                if (!/^\d+\.$/.test(tokens[0]) && (upperLine === "JUMLAH" || upperLine.startsWith("JUMLAH "))) {
+                  lastRow = null; return;         
+                }
+                
+                // FILTER HEADER HALAMAN BARU RKAS
+                const kataKunciHeader = ["NO. URUT", "KODE REKENING", "KODE PROGRAM", "URAIAN", "RINCIAN PERHITUNGAN", "VOLUME", "SATUAN", "TARIF HARGA", "JUMLAH", "TAHAP", "KERTAS KERJA PERTAHAP", "HALAMAN"];
+                let apakahHeader = kataKunciHeader.some(kata => upperLine.includes(kata));
+                if (apakahHeader && !/^\d+\.$/.test(tokens[0])) return;
+
+                if (/^\d+\.$/.test(tokens[0])) {
+                  let rowCells = Array(10).fill("");
+                  rowCells[0] = tokens[0]; 
+
+                  let isDetailRow = false;
+                  if (tokens.length >= 5) {
+                    let cleanNum = tokens[tokens.length - 4].replace(/\./g, "");
+                    if (/^\d+$/.test(cleanNum)) isDetailRow = true;
+                  }
+
+                  if (isDetailRow && tokens.length >= 7) {
+                    rowCells[9] = tokens[tokens.length - 1]; 
+                    rowCells[8] = tokens[tokens.length - 2]; 
+                    rowCells[7] = tokens[tokens.length - 3]; 
+                    rowCells[6] = tokens[tokens.length - 4]; 
+                    rowCells[5] = tokens[tokens.length - 5]; 
+                    rowCells[4] = tokens[tokens.length - 6]; 
+
+                    let leadingItems = lineItems.slice(1, lineItems.length - 6);
+                    let reknParts = [], progParts = [], uraiParts = [], passedProgram = false;
+
+                    leadingItems.forEach(item => {
+                      let token = item.str.trim();
+                      if (/^\d{2}\.(\d{2}\.)*$/.test(token)) { progParts.push(token); passedProgram = true; } 
+                      else {
+                        if (passedProgram) uraiParts.push(token);
+                        else if (/[a-zA-Z]/.test(token)) { uraiParts.push(token); passedProgram = true; } 
+                        else reknParts.push(token);
+                      }
+                    });
+                    rowCells[1] = reknParts.join(" "); rowCells[2] = progParts.join("").replace(/\s+/g, ""); rowCells[3] = uraiParts.join(" ");
+                  } else if (tokens.length >= 4) {
+                    rowCells[9] = tokens[tokens.length - 1]; 
+                    rowCells[8] = tokens[tokens.length - 2]; 
+                    rowCells[7] = tokens[tokens.length - 3]; 
+
+                    let leadingItems = lineItems.slice(1, lineItems.length - 3);
+                    let reknParts = [], progParts = [], uraiParts = [], passedProgram = false;
+
+                    leadingItems.forEach(item => {
+                      let token = item.str.trim();
+                      if (/^\d{2}\.(\d{2}\.)*$/.test(token)) { progParts.push(token); passedProgram = true; } 
+                      else {
+                        if (passedProgram || /[a-zA-Z]/.test(token)) { uraiParts.push(token); passedProgram = true; } 
+                        else reknParts.push(token);
+                      }
+                    });
+                    rowCells[1] = reknParts.join(" "); rowCells[2] = progParts.join("").replace(/\s+/g, ""); rowCells[3] = uraiParts.join(" ");
+                  }
+                  tableRows.push(rowCells);
+                  lastRow = rowCells; 
+
+                } else if (lastRow) {
+                  lineItems.forEach(item => {
+                    let token = item.str.trim();
+                    let x = item.transform[4]; 
+
+                    // PENGATURAN KOORDINAT RKAS
+                    if (x < 150 && /^\d{4}$/.test(token)) {
+                      lastRow[1] = lastRow[1] ? lastRow[1] + (lastRow[1].endsWith('.') ? '' : '.') + token : token;
+                    } 
+                    else if (x >= 150 && x < 480) { // Batas Uraian
+                      lastRow[3] += (lastRow[3] ? " " : "") + token;
+                    }
+                    else if (x >= 480 && x < 580) { // Batas Satuan
+                      if (lastRow[5] && lastRow[5].endsWith('/')) {
+                        lastRow[5] += token;
+                      } else {
+                        lastRow[5] += (lastRow[5] ? " " : "") + token;
+                      }
+                    }
+                  });
+                }
+              }
+            });
+          });
+
+          document.getElementById('rawText').textContent = fullTextLines.join('\n');
+          document.getElementById('infoNpsn').textContent = npsn || "Tidak ditemukan";
+          document.getElementById('infoNama').textContent = namaSekolah || "Tidak ditemukan";
+          document.getElementById('infoKecamatan').textContent = kecamatan || "Tidak ditemukan";
+
+          if (tableRows.length > 0) {
+            buatTabelHTML(tableRows);
+            document.getElementById('btnDownload').classList.remove('d-none');
+          } else {
+            document.getElementById('tableContainer').innerHTML = '<div class="alert alert-warning m-4">Tabel B. BELANJA tidak ditemukan.</div>';
+          }
+        });
+      }).catch(err => {
+        document.getElementById('tableContainer').innerHTML = `<div class="alert alert-danger m-4">Gagal memproses: ${err.message}</div>`;
+      });
+    };
+    fileReader.readAsArrayBuffer(file);
+  }
+
+  function buatTabelHTML(rowsData) {
+    let tableHTML = '<table id="dataTabelHasil" class="table table-bordered table-hover table-sm align-middle">';
+    tableHTML += `
+      <thead class="text-center align-middle">
+        <tr>
+          <th rowspan="2">No. Urut</th><th rowspan="2">Kode Rekening</th><th rowspan="2">Kode Program</th><th rowspan="2">Uraian</th>
+          <th colspan="3">Rincian Perhitungan</th><th rowspan="2">Jumlah</th><th colspan="2">Tahap</th>
+        </tr>
+        <tr><th>Volume</th><th>Satuan</th><th>Tarif Harga</th><th>1</th><th>2</th></tr>
+      </thead><tbody>
+    `;
+    
+    rowsData.forEach(row => {
+      let p3 = row[2].trim().length, warna = ""; 
+      if (row[1].trim() === "" && p3 === 3) warna = 'class="table-danger"'; 
+      else if (row[1].trim() === "" && p3 === 6) warna = 'class="table-success"'; 
+      else if (row[1].trim() === "" && p3 === 9) warna = 'class="table-warning"'; 
+
+      tableHTML += `<tr ${warna}>`;
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].forEach((posisi) => {
+        let nilaiSel = row[posisi], cls = "";
+        if (posisi === 0) cls = "text-center";
+        else if ([4, 6, 7, 8, 9].includes(posisi)) cls = "text-end";
+
+        if (posisi === 6 && nilaiSel !== "") {
+          let angkaBersih = nilaiSel.replace(/\./g, '');
+          if (!isNaN(angkaBersih) && angkaBersih.trim() !== '') nilaiSel = parseInt(angkaBersih, 10).toLocaleString('id-ID');
+        }
+        tableHTML += `<td contenteditable="true" class="text-dark ${cls}">${nilaiSel}</td>`;
+      });
+      tableHTML += '</tr>';
+    });
+    tableHTML += '</tbody></table>';
+    document.getElementById('tableContainer').innerHTML = tableHTML;
+  }
+
+  async function downloadExcel() {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Data Konversi');
+    const npsnText = document.getElementById('infoNpsn').textContent.trim();
+    const namaSekolahVal = document.getElementById('infoNama').textContent.trim();
+
+    worksheet.getCell('A1').value = "NPSN"; worksheet.getCell('B1').value = npsnText;
+    worksheet.getCell('A2').value = "B. BELANJA";
+    worksheet.getCell('A1').font = { bold: true }; worksheet.getCell('B1').font = { bold: true }; worksheet.getCell('A2').font = { bold: true };
+
+    worksheet.getCell('A3').value = "No. Urut"; worksheet.getCell('B3').value = "Kode Rekening";
+    worksheet.getCell('C3').value = "Kode Program"; worksheet.getCell('D3').value = "Uraian";
+    worksheet.getCell('E3').value = "Rincian Perhitungan"; worksheet.getCell('H3').value = "Jumlah";
+    worksheet.getCell('I3').value = "Tahap";
+    worksheet.getCell('E4').value = "Volume"; worksheet.getCell('F4').value = "Satuan";
+    worksheet.getCell('G4').value = "Tarif Harga"; worksheet.getCell('I4').value = "1"; worksheet.getCell('J4').value = "2";
+
+    worksheet.mergeCells('A3:A4'); worksheet.mergeCells('B3:B4'); worksheet.mergeCells('C3:C4'); 
+    worksheet.mergeCells('D3:D4'); worksheet.mergeCells('E3:G3'); worksheet.mergeCells('H3:H4'); worksheet.mergeCells('I3:J3'); 
+
+    const borderStyle = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    for (let r = 3; r <= 4; r++) worksheet.getRow(r).eachCell((cell) => { cell.font = { bold: true }; cell.alignment = { vertical: 'middle', horizontal: 'center' }; cell.border = borderStyle; });
+
+    for (let i = 1; i <= 10; i++) worksheet.getColumn(i).width = 12; 
+    worksheet.getColumn(4).width = 35; 
+
+    const htmlRows = document.querySelectorAll('#dataTabelHasil tbody tr');
+    let currentRow = 5; 
+
+    htmlRows.forEach((tr) => {
+      const tds = tr.querySelectorAll('td');
+      if (tds.length === 0) return;
+      const excelRow = worksheet.getRow(currentRow);
+      
+      let rowColor = null; 
+      if (tr.classList.contains('table-danger')) rowColor = "FFF8D7DA";      
+      else if (tr.classList.contains('table-success')) rowColor = "FFD1E7DD"; 
+      else if (tr.classList.contains('table-warning')) rowColor = "FFFFF3CD"; 
+
+      tds.forEach((td, index) => {
+        let cellValue = td.innerText.trim(); 
+        let cell = excelRow.getCell(index + 1);
+        if ([4, 6, 7, 8, 9].includes(index)) {
+          if (cellValue !== "") {
+            let parsedNum = parseFloat(cellValue.replace(/\./g, ''));
+            cell.value = isNaN(parsedNum) ? cellValue : parsedNum;
+          }
+        } else { cell.value = cellValue; cell.numFmt = '@'; }
+
+        cell.border = borderStyle;
+        if (rowColor) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowColor } };
+        cell.alignment = { vertical: 'top', wrapText: true };
+      });
+      currentRow++;
+    });
+
+    const blob = new Blob([await workbook.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `Import_Sipbos_${npsnText}_${namaSekolahVal}.xlsx`);
+  }
+
+  // ==========================================
+  // JAVASCRIPT: LOGIKA TAB BKU
+  // ==========================================
+  const dropZoneBKU = document.getElementById('dropZoneBKU');
+  const fileInputBKU = document.getElementById('fileInputBKU');
+
+  dropZoneBKU.addEventListener('dragover', (e) => { e.preventDefault(); dropZoneBKU.classList.add('dragover'); });
+  dropZoneBKU.addEventListener('dragleave', () => dropZoneBKU.classList.remove('dragover'));
+  dropZoneBKU.addEventListener('drop', (e) => {
+    e.preventDefault(); dropZoneBKU.classList.remove('dragover');
+    if (e.dataTransfer.files.length) prosesFilePDF_BKU(e.dataTransfer.files[0]);
+  });
+  fileInputBKU.addEventListener('change', function(e) {
+    if (e.target.files.length) prosesFilePDF_BKU(e.target.files[0]);
+  });
+
+  function prosesFilePDF_BKU(file) {
+    if (file.type !== 'application/pdf') { alert('Hanya menerima dokumen PDF.'); return; }
+
+    document.getElementById('rawTextBKU').textContent = "Membaca BKU: " + file.name + "...";
+    document.getElementById('tableContainerBKU').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary mb-3"></div><p>Mengekstrak BKU...</p></div>';
+
+    const fileReader = new FileReader();
+    fileReader.onload = function() {
+      const typedarray = new Uint8Array(this.result);
+      pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+        let pagePromises = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          pagePromises.push(pdf.getPage(i).then(page => page.getTextContent().then(textContent => {
+            let lines = {};
+            textContent.items.forEach(item => {
+              if (item.str.trim() === "") return;
+              let y = Math.round(item.transform[5]); 
+              let existingY = Object.keys(lines).find(key => Math.abs(key - y) <= 4);
+              if (existingY) lines[existingY].push(item);
+              else lines[y] = [item];
+            });
+            return lines;
+          })));
+        }
+
+        Promise.all(pagePromises).then(allPagesLines => {
+          let fullTextLines = [];
+          
+          // Variabel untuk menampung Identitas BKU
+          let npsn = "", namaSekolah = "", periode = "", desaKecamatan = "", sumberDana = ""; 
+
+          // 1. KUMPULKAN DAN BERSIHKAN TEKS MENTAH DULU
+          allPagesLines.forEach(lines => {
+            let inTableArea = false; 
+            let isFooterArea = false; 
+
+            let sortedY = Object.keys(lines).sort((a, b) => b - a); 
+            sortedY.forEach(y => {
+              let itemsInLine = lines[y].sort((a, b) => a.transform[4] - b.transform[4]); 
+              let lineItems = itemsInLine.filter(item => item.str.trim() !== "");
+              if (lineItems.length === 0) return;
+
+              let tokens = lineItems.map(item => item.str.trim());
+              let lineText = tokens.join(" ");
+              let upperLine = lineText.toUpperCase().trim();
+
+              // --- PERBAIKAN EKSTRAKSI IDENTITAS (METADATA) ---
+              
+              // 1. Ambil NPSN (dan potong jika ada teks "Halaman" yang bocor)
+              if (upperLine.includes("NPSN") && upperLine.includes(":")) {
+                let rawNpsn = lineText.split(/NPSN\s*:/i)[1]?.split(',')[0].trim() || "";
+                npsn = rawNpsn.split(/HALAMAN/i)[0].trim() || npsn;
+              }
+              
+              // 2. Ambil Nama Sekolah & Proteksi dari teks "Halaman X dari Y"
+              if (upperLine.includes("NAMA SEKOLAH") && upperLine.includes(":")) {
+                let rawNama = lineText.split(/NAMA SEKOLAH\s*:/i)[1]?.split(',')[0].trim() || "";
+                // Potong teks jika mendeteksi kata "HALAMAN" agar bersih
+                namaSekolah = rawNama.split(/HALAMAN/i)[0].trim() || namaSekolah;
+              }
+              
+              // 3. Ambil Periode Bulan (Tepat di baris yang mengandung teks BULAN:)
+              if (upperLine.includes("BULAN:")) {
+                let rawBulan = lineText.substring(lineText.toUpperCase().indexOf("BULAN:")).trim();
+                periode = rawBulan.split(/HALAMAN/i)[0].trim() || periode;
+              }
+              
+              // 4. Ambil Desa/Kecamatan
+              if (upperLine.includes("DESA/KECAMATAN") && upperLine.includes(":")) {
+                let rawDesa = lineText.split(/DESA\/KECAMATAN\s*:/i)[1]?.trim() || "";
+                desaKecamatan = rawDesa.split(/HALAMAN/i)[0].trim() || desaKecamatan;
+              }
+              
+              // 5. Ambil Sumber Dana
+              if (upperLine.includes("SUMBER DANA") && upperLine.includes(":")) {
+                let rawDana = lineText.split(/SUMBER DANA\s*:/i)[1]?.trim() || "";
+                sumberDana = rawDana.split(/HALAMAN/i)[0].trim() || sumberDana;
+              }
+
+              // Deteksi Batas Mulai Tabel BKU
+              if (upperLine.includes("TANGGAL") || upperLine.includes("KODE KEGIATAN") || upperLine.replace(/[\s\|]/g, '') === "12345678") {
+                inTableArea = true;
+                return; 
+              }
+
+              // Deteksi Batas Akhir Tabel (Footer)
+              if (upperLine === "JUMLAH" || upperLine.startsWith("JUMLAH ") || upperLine.includes("PADA HARI INI") || upperLine.includes("TERDIRI DARI") || upperLine.includes("MENYETUJUI")) {
+                isFooterArea = true;
+              }
+
+              // Abaikan teks identitas halaman di bagian bawah ujung kertas
+              if (upperLine.startsWith("BKU ") && upperLine.includes("NPSN")) return;
+              if (upperLine.startsWith("HALAMAN ")) return;
+
+              if (inTableArea && !isFooterArea) {
+                const abaikanKata = ["URAIAN", "PENERIMAAN", "PENGELUARAN", "SALDO", "KODE", "REKENING", "NO.", "BUKTI", "KEGIATAN", "KEGIATAN REKENING", "KODE REKENING", "KODE KEGIATAN", "NO. BUKTI"];
+                if (abaikanKata.includes(upperLine)) return; 
+
+                if (/^[\d\s\|]+$/.test(upperLine) && upperLine.includes("1") && upperLine.includes("2") && upperLine.includes("3")) return;
+
+                fullTextLines.push(lineText);
+              }
+            });
+          });
+
+
+          // 2. KELOMPOKKAN BARIS MENJADI BLOK TRANSAKSI (STATE MACHINE)
+          let blocks = [];
+          let currentBlock = [];
+          let hasDateInBlock = false;
+
+          for (let line of fullTextLines) {
+            let isDateLine = /^\d{2}-\d{2}-\d{4}/.test(line);
+            let isRekeningStart = /^5\.\d\.\d{2}/.test(line.replace(/\s/g, ''));
+
+            // Jika ketemu Tanggal atau Awal Rekening baru, buat wadah transaksi (blok) baru
+            if ((isDateLine || isRekeningStart) && hasDateInBlock) {
+              blocks.push(currentBlock);
+              currentBlock = [line];
+              hasDateInBlock = isDateLine;
+            } else {
+              currentBlock.push(line);
+              if (isDateLine) hasDateInBlock = true;
+            }
+          }
+          if (currentBlock.length > 0) blocks.push(currentBlock);
+
+          // 3. EKSTRAK DATA DARI SETIAP BLOK TRANSAKSI
+          let tableRows = [];
+
+          blocks.forEach(block => {
+            let row = { tanggal: "", kegiatan: "", rekening: "", bukti: "", uraian: "", penerimaan: "0", pengeluaran: "0", saldo: "0" };
+            let uraianTokens = [];
+            let isAmountExtracted = false;
+
+            for (let i = 0; i < block.length; i++) {
+              let line = block[i];
+              // Membersihkan karakter pemisah "|" yang sering ada di dalam PDF
+              line = line.replace(/\|/g, ' ').replace(/\s+/g, ' '); 
+              let tokens = line.split(" ").filter(t => t.trim() !== "");
+              let leftoverTokens = [];
+
+              for (let j = 0; j < tokens.length; j++) {
+                let token = tokens[j];
+
+                if (!row.tanggal && /^\d{2}-\d{2}-\d{4}$/.test(token)) {
+                  row.tanggal = token; continue;
+                }
+                if (!row.kegiatan && /^\d{2}\.\d{2}\.\d{2}\.$/.test(token)) {
+                  row.kegiatan = token; continue;
+                }
+                if (!row.bukti && /^[A-Za-z]{2,5}\d+$/.test(token)) {
+                  row.bukti = token; continue;
+                }
+                if (/^5\.\d(?:\.\d{2}){3,4}/.test(token)) {
+                  row.rekening += token; continue;
+                }
+                
+                leftoverTokens.push(token); // Sisa kata yang tidak masuk aturan masuk ke sini
+              }
+
+              // Proses Pencarian Nominal Uang (diambil dari kata paling belakang)
+              if (row.tanggal && !isAmountExtracted && leftoverTokens.length >= 2) {
+                let moneyArr = [];
+                while (leftoverTokens.length > 0) {
+                  let lastToken = leftoverTokens[leftoverTokens.length - 1];
+                  if (/^\d{1,3}(\.\d{3})*(,\d{2})?$/.test(lastToken)) {
+                    moneyArr.unshift(leftoverTokens.pop());
+                  } else {
+                    break;
+                  }
+                }
+
+                if (moneyArr.length === 3) {
+                  row.penerimaan = moneyArr[0]; row.pengeluaran = moneyArr[1]; row.saldo = moneyArr[2];
+                  isAmountExtracted = true;
+                } else if (moneyArr.length === 2) {
+                  row.pengeluaran = moneyArr[0]; row.saldo = moneyArr[1];
+                  isAmountExtracted = true;
+                } else if (moneyArr.length === 1) {
+                  row.saldo = moneyArr[0];
+                  isAmountExtracted = true;
+                } else {
+                  leftoverTokens.push(...moneyArr); 
+                }
+              }
+
+              // Proses Menyambung Sisa Kode Rekening (seperti '31' atau '03')
+              if (row.rekening && leftoverTokens.length > 0) {
+                let expectedLength = 17; 
+                if (row.rekening.length < expectedLength) {
+                  let firstToken = leftoverTokens[0];
+                  if (/^\d{2,4}$/.test(firstToken)) {
+                    row.rekening += firstToken;
+                    leftoverTokens.shift(); 
+                  }
+                }
+              }
+
+              // Kumpulkan semua sisa kata untuk dijadikan Uraian
+              if (leftoverTokens.length > 0) {
+                uraianTokens.push(leftoverTokens.join(" "));
+              }
+            }
+
+            row.uraian = uraianTokens.join(" ").trim();
+
+            if (row.tanggal) {
+              tableRows.push([
+                row.tanggal, row.kegiatan, row.rekening, row.bukti,
+                row.uraian, row.penerimaan, row.pengeluaran, row.saldo
+              ]);
+            }
+          });
+
+          // --- LOGIKA BARU: AMBIL BULAN DARI TANGGAL TRANSAKSI PERTAMA ---
+          if (tableRows.length > 0) {
+            let tanggalPertama = tableRows[0][0]; // Ambil data di kolom index 0 baris pertama (contoh: 16-03-2026)
+            let bagianTanggal = tanggalPertama.split("-");
+            
+            if (bagianTanggal.length === 3) {
+              const daftarBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+              let indeksBulan = parseInt(bagianTanggal[1], 10) - 1; // Ubah '03' jadi angka 2 (index untuk Maret)
+              let tahun = bagianTanggal[2];
+              periode = `${daftarBulan[indeksBulan]} ${tahun}`; // Hasil: "Maret 2026"
+            }
+          }
+
+          // UPDATE TAMPILAN
+          document.getElementById('rawTextBKU').textContent = fullTextLines.join('\n');
+          document.getElementById('infoNpsnBKU').textContent = npsn || "-";
+          document.getElementById('infoNamaBKU').textContent = namaSekolah || "-";
+          
+          // Memasukkan variabel periode yang baru didapatkan dari tanggal
+          document.getElementById('infoPeriodeBKU').textContent = periode || "-"; 
+          
+          document.getElementById('infoDesaKecamatanBKU').textContent = desaKecamatan || "-";
+          document.getElementById('infoSumberDanaBKU').textContent = sumberDana || "-";
+
+          if (tableRows.length > 0) {
+            buatTabelHTML_BKU(tableRows);
+            document.getElementById('btnDownloadBKU').classList.remove('d-none');
+          } else {
+            document.getElementById('tableContainerBKU').innerHTML = '<div class="alert alert-warning m-4">Data BKU tidak ditemukan.</div>';
+          }
+
+        });
+
+      }).catch(err => {
+        document.getElementById('tableContainerBKU').innerHTML = `<div class="alert alert-danger m-4">Gagal memproses BKU: ${err.message}</div>`;
+      });
+    };
+    fileReader.readAsArrayBuffer(file);
+  }
+
+  function buatTabelHTML_BKU(rowsData) {
+    let tableHTML = `
+      <table id="dataTabelHasilBKU" class="table table-bordered table-hover table-sm align-middle">
+        <thead class="text-center align-middle" style="background-color: #f8f9fa;">
+          <tr>
+            <th style="width:90px">Tanggal</th><th>Kode Kegiatan</th><th>Kode Rekening</th><th>No. Bukti</th>
+            <th>Uraian</th><th>Penerimaan</th><th>Pengeluaran</th><th>Saldo</th>
+          </tr>
+          <tr class="bg-primary-subtle">
+            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    rowsData.forEach(row => {
+      tableHTML += `<tr>`;
+      row.forEach((cell, i) => {
+        let align = (i >= 5) ? "text-end" : (i === 4 ? "text-start" : "text-center");
+        tableHTML += `<td contenteditable="true" class="text-dark ${align}">${cell}</td>`;
+      });
+      tableHTML += `</tr>`;
+    });
+    
+    tableHTML += '</tbody></table>';
+    document.getElementById('tableContainerBKU').innerHTML = tableHTML;
+  }
+
+  // ==========================================
+  // PROTEKSI HALAMAN
+  // ==========================================
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', e => {
+    if (e.key === 'F12' || e.keyCode === 123) e.preventDefault();
+    if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) e.preventDefault();
+    if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) e.preventDefault();
+  });
+
+
+
+  // ==========================================
+  // JAVASCRIPT: LOGIKA EKSPOR EXCEL BKU
+  // ==========================================
+  async function downloadExcelBKU() {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Data BKU');
+
+    // 1. Ambil Data dari Layar
+    const npsn = document.getElementById('infoNpsnBKU').textContent.trim();
+    const nama = document.getElementById('infoNamaBKU').textContent.trim(); // Tetap diambil untuk nama file
+
+    // 2. Baris 1: Tulis NPSN
+    worksheet.getCell('A1').value = "NPSN";
+    worksheet.getCell('B1').value = npsn;
+    worksheet.getCell('A1').font = { bold: true };
+    worksheet.getCell('B1').font = { bold: true };
+
+    // 3. Baris 2 & 3: Header Tabel
+    const headerRow1 = worksheet.getRow(2);
+    headerRow1.values = ["Tanggal", "Kode Kegiatan", "Kode Rekening", "No. Bukti", "Uraian", "Penerimaan", "Pengeluaran", "Saldo"];
+    
+    const headerRow2 = worksheet.getRow(3);
+    headerRow2.values = ["1", "2", "3", "4", "5", "6", "7", "8"];
+
+    // Format dan berikan garis pembatas untuk header (Baris 2 dan 3)
+    const borderStyle = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    [headerRow1, headerRow2].forEach(row => {
+      row.font = { bold: true };
+      row.alignment = { horizontal: 'center', vertical: 'middle' };
+      row.eachCell(cell => cell.border = borderStyle);
+    });
+
+    // Atur lebar kolom agar rapi
+    worksheet.getColumn(1).width = 12; // Tanggal
+    worksheet.getColumn(2).width = 15; // Kode Kegiatan
+    worksheet.getColumn(3).width = 22; // Kode Rekening
+    worksheet.getColumn(4).width = 12; // No Bukti
+    worksheet.getColumn(5).width = 45; // Uraian
+    worksheet.getColumn(6).width = 18; // Penerimaan
+    worksheet.getColumn(7).width = 18; // Pengeluaran
+    worksheet.getColumn(8).width = 18; // Saldo
+
+    // 4. Salin Data dari Tabel HTML ke Excel (Mulai dari baris ke-4)
+    const htmlRows = document.querySelectorAll('#dataTabelHasilBKU tbody tr');
+    let currentRow = 4; // Pengaturan data dimulai dari baris ke-4
+
+    htmlRows.forEach((tr) => {
+      const tds = tr.querySelectorAll('td');
+      if (tds.length === 0) return;
+      const excelRow = worksheet.getRow(currentRow);
+
+      tds.forEach((td, index) => {
+        let cellValue = td.innerText.trim();
+        let cell = excelRow.getCell(index + 1);
+
+        // Khusus kolom Penerimaan, Pengeluaran, Saldo (Index 5, 6, 7) jadikan format angka murni
+        if (index >= 5) {
+          if (cellValue !== "") {
+            let parsedNum = parseFloat(cellValue.replace(/\./g, ''));
+            cell.value = isNaN(parsedNum) ? cellValue : parsedNum;
+            cell.numFmt = '#,##0'; // Format angka ribuan
+          }
+        } else {
+          cell.value = cellValue;
+          cell.numFmt = '@'; // Set sebagai teks biasa
+        }
+
+        cell.border = borderStyle;
+        cell.alignment = { vertical: 'top', wrapText: true };
+      });
+      currentRow++;
+    });
+
+    // 5. Proses Unduh
+    const blob = new Blob([await workbook.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `Export_BKU_${npsn}_${nama}.xlsx`);
+  }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
