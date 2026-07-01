@@ -1123,14 +1123,35 @@
         let cellValue = td.innerText.trim();
         let cell = excelRow.getCell(index + 1);
 
-        // Khusus kolom Penerimaan, Pengeluaran, Saldo (Index 5, 6, 7) jadikan format angka murni
-        if (index >= 5) {
+        // 1. ATURAN KHUSUS KOLOM TANGGAL (Indeks 0)
+        if (index === 0) {
+          let bagianTanggal = cellValue.split("-");
+          
+          // Pastikan formatnya benar terbagi 3 (DD-MM-YYYY)
+          if (bagianTanggal.length === 3) {
+            let hari = parseInt(bagianTanggal[0], 10);
+            let bulan = parseInt(bagianTanggal[1], 10) - 1; // JavaScript bulan dimulai dari 0
+            let tahun = parseInt(bagianTanggal[2], 10);
+            
+            // Ubah menjadi tipe data Tanggal asli
+            cell.value = new Date(tahun, bulan, hari);
+            cell.numFmt = 'dd-mm-yyyy'; // Format tampilan tanggal di Excel
+          } else {
+            // Jika format gagal dibaca, kembalikan sebagai teks
+            cell.value = cellValue;
+            cell.numFmt = '@';
+          }
+        } 
+        // 2. ATURAN KHUSUS KOLOM UANG (Indeks 5, 6, 7)
+        else if (index >= 5) {
           if (cellValue !== "") {
             let parsedNum = parseFloat(cellValue.replace(/\./g, ''));
             cell.value = isNaN(parsedNum) ? cellValue : parsedNum;
             cell.numFmt = '#,##0'; // Format angka ribuan
           }
-        } else {
+        } 
+        // 3. ATURAN KOLOM LAINNYA (Kegiatan, Rekening, Bukti, Uraian)
+        else {
           cell.value = cellValue;
           cell.numFmt = '@'; // Set sebagai teks biasa
         }
@@ -1138,6 +1159,7 @@
         cell.border = borderStyle;
         cell.alignment = { vertical: 'top', wrapText: true };
       });
+      
       currentRow++;
     });
 
