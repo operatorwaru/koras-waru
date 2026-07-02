@@ -1171,7 +1171,7 @@
             let tahun = parseInt(bagianTanggal[2], 10);
             
             // Ubah menjadi tipe data Tanggal asli
-            cell.value = new Date(tahun, bulan, hari);
+            cell.value = new Date(Date.UTC(tahun, bulan, hari));
             cell.numFmt = 'dd-mm-yyyy'; // Format tampilan tanggal di Excel
           } else {
             // Jika format gagal dibaca, kembalikan sebagai teks
