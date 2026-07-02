@@ -1112,6 +1112,8 @@
     // 1. Ambil Data dari Layar
     const npsn = document.getElementById('infoNpsnBKU').textContent.trim();
     const nama = document.getElementById('infoNamaBKU').textContent.trim(); // Tetap diambil untuk nama file
+    let bulan = document.getElementById('infoPeriodeBKU').textContent.trim();
+    bulan = bulan.replace(/\s+/g, '_');
 
     // 2. Baris 1: Tulis NPSN
     worksheet.getCell('A1').value = "NPSN";
@@ -1200,7 +1202,7 @@
 
     // 5. Proses Unduh
     const blob = new Blob([await workbook.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    saveAs(blob, `Export_BKU_${npsn}_${nama}.xlsx`);
+    saveAs(blob, `${bulan}_BKU_${npsn}_${nama}.xlsx`);
   }
 
   // ==========================================
